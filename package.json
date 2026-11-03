@@ -1,0 +1,16 @@
+{
+  "name": "inst377-http-lab",
+  "version": "1.0.0",
+  "description": "A tiny API for practicing HTTP methods (INST377)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "local": "node local-server.js"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.34.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

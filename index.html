@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>INST377 HTTP Lab</title>
+  <style>
+    :root {
+      --bg: #faf9f7; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70;
+      --line: #e4e2de; --accent: #c8102e; --gold: #e8b100; --code: #f3f1ed;
+      --ok: #1f7a3a; --warn: #a15c00; --err: #b3261e;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141416; --panel: #1c1c1f; --ink: #ededee; --muted: #9a9aa0;
+        --line: #2c2c31; --accent: #ff5468; --gold: #f2c230; --code: #26262a;
+        --ok: #5fcf86; --warn: #f0a64a; --err: #ff7a70;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink);
+      font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    header { border-top: 6px solid var(--accent); padding: 32px 16px 8px; }
+    main, header > div { max-width: 920px; margin: 0 auto; }
+    main { padding: 0 16px 64px; }
+    h1 { font-size: 2rem; margin: 0 0 4px; letter-spacing: -0.02em; }
+    h2 { font-size: 1.2rem; margin: 40px 0 12px; }
+    p.lead { color: var(--muted); margin: 0; }
+    code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88rem; }
+    code { background: var(--code); padding: 1px 5px; border-radius: 4px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .m { display: inline-block; min-width: 62px; font-weight: 700; font-size: 0.78rem; }
+    .GET { color: var(--ok); } .POST { color: var(--accent); } .PUT { color: var(--warn); }
+    .PATCH { color: var(--gold); } .DELETE { color: var(--err); } .ANY { color: var(--muted); }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    select, input, textarea, button { font: inherit; color: var(--ink); background: var(--bg);
+      border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+    input[type=text] { flex: 1; min-width: 180px; }
+    textarea { width: 100%; min-height: 110px; margin-top: 8px; resize: vertical; }
+    button { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; cursor: pointer; }
+    button.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 500; }
+    .presets { margin-top: 10px; gap: 6px; }
+    .presets button { padding: 4px 10px; font-size: 0.85rem; }
+    .status { margin: 14px 0 6px; font-weight: 700; }
+    .status.ok { color: var(--ok); } .status.bad { color: var(--err); }
+    pre { background: var(--code); padding: 12px; border-radius: 8px; overflow-x: auto; margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; }
+    .small { color: var(--muted); font-size: 0.88rem; }
+    form label { display: block; margin-top: 8px; font-size: 0.9rem; }
+    form input { width: 100%; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<header><div>
+  <h1>INST377 HTTP Lab</h1>
+  <p class="lead">A tiny products API for practicing GET, POST, PUT, PATCH and DELETE. Changes are saved, so you can create something and then read it back.</p>
+</div></header>
+
+<main>
+  <h2>Endpoints</h2>
+  <p class="small">Base URL: <code id="base"></code></p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Method</th><th>Path</th><th>What it does</th><th>Success code</th></tr></thead>
+    <tbody>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/products</code></td><td>List all products. Filter with <code>?name=Tim</code> or <code>?productName=mug</code></td><td>200</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/products</code></td><td>Create a product (all 4 fields required)</td><td>201</td></tr>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/products/:id</code></td><td>Get one product</td><td>200</td></tr>
+      <tr><td><span class="m PUT">PUT</span></td><td><code>/api/products/:id</code></td><td>Replace the whole product (all 4 fields required)</td><td>200</td></tr>
+      <tr><td><span class="m PATCH">PATCH</span></td><td><code>/api/products/:id</code></td><td>Change only the fields you send</td><td>200</td></tr>
+      <tr><td><span class="m DELETE">DELETE</span></td><td><code>/api/products/:id</code></td><td>Delete the product</td><td>204</td></tr>
+      <tr><td><span class="m ANY">ANY</span></td><td><code>/api/echo</code></td><td>Sends back the method, query string, headers and body it received</td><td>200</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">Product fields: <code>name</code> (your name), <code>productName</code>, <code>productDescription</code>, <code>productPrice</code> (number). Errors you can trigger on purpose: 400 (missing field), 404 (bad id), 405 (wrong method).</p>
+
+  <h2>Try a request</h2>
+  <div class="card">
+    <div class="row">
+      <select id="method" aria-label="HTTP method">
+        <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>OPTIONS</option><option>HEAD</option>
+      </select>
+      <input type="text" id="path" value="/api/products" aria-label="Path">
+      <button id="send">Send</button>
+    </div>
+    <textarea id="body" class="mono" aria-label="JSON body" placeholder="JSON body (used for POST, PUT, PATCH)"></textarea>
+    <div class="row presets" id="presets"></div>
+    <div id="result" hidden>
+      <div class="status" id="status"></div>
+      <div class="small">Response headers</div>
+      <pre id="headers"></pre>
+      <div class="small" style="margin-top:10px">Response body</div>
+      <pre id="response"></pre>
+    </div>
+  </div>
+
+  <h2>HTML forms (GET vs POST)</h2>
+  <p class="small">Forms can only send GET or POST. Submit each one and compare where the data shows up in the echo.</p>
+  <div class="grid">
+    <form class="card" action="/api/echo" method="GET">
+      <strong class="m GET">GET</strong> → <code>/api/echo</code>
+      <label>Name <input name="name" value="Tim"></label>
+      <label>Product name <input name="productName" value="Mug"></label>
+      <button type="submit" style="margin-top:12px">Submit with GET</button>
+    </form>
+    <form class="card" action="/api/products" method="POST">
+      <strong class="m POST">POST</strong> → <code>/api/products</code>
+      <label>Name <input name="name" required></label>
+      <label>Product name <input name="productName" required></label>
+      <label>Description <input name="productDescription" required></label>
+      <label>Price <input name="productPrice" type="number" step="0.01" required></label>
+      <button type="submit" style="margin-top:12px">Create product</button>
+    </form>
+  </div>
+
+  <h2>Current products <button class="ghost" id="refresh" style="margin-left:8px;font-size:0.85rem">Refresh</button></h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>id</th><th>Name</th><th>Product</th><th>Description</th><th>Price</th></tr></thead>
+    <tbody id="list"><tr><td colspan="5" class="small">Loading…</td></tr></tbody>
+  </table></div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('base').textContent = location.origin;
+
+  const sample = { name: 'Your Name', productName: 'Terrapin Hoodie', productDescription: 'Red, size M', productPrice: 45 };
+  const presets = [
+    ['List all', 'GET', '/api/products', null],
+    ['Get #1', 'GET', '/api/products/1', null],
+    ['Create', 'POST', '/api/products', sample],
+    ['Replace #1', 'PUT', '/api/products/1', sample],
+    ['Patch price #1', 'PATCH', '/api/products/1', { productPrice: 9.99 }],
+    ['Delete #3', 'DELETE', '/api/products/3', null],
+    ['404', 'GET', '/api/products/9999', null],
+    ['400', 'POST', '/api/products', { name: 'Missing fields' }],
+    ['Echo', 'PUT', '/api/echo?hello=world', { anything: 'you like' }],
+  ];
+  for (const [label, method, path, body] of presets) {
+    const b = document.createElement('button');
+    b.className = 'ghost'; b.textContent = label;
+    b.onclick = () => { $('method').value = method; $('path').value = path;
+      $('body').value = body ? JSON.stringify(body, null, 2) : ''; };
+    $('presets').appendChild(b);
+  }
+
+  $('send').onclick = async () => {
+    const method = $('method').value;
+    const opts = { method, headers: {} };
+    const raw = $('body').value.trim();
+    if (raw && !['GET', 'HEAD', 'OPTIONS', 'DELETE'].includes(method)) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = raw;
+    }
+    $('result').hidden = false;
+    try {
+      const r = await fetch($('path').value, opts);
+      const text = await r.text();
+      $('status').textContent = `${method} ${$('path').value}  →  ${r.status} ${r.statusText}`;
+      $('status').className = 'status ' + (r.ok ? 'ok' : 'bad');
+      const hs = [];
+      for (const k of ['content-type', 'allow', 'location', 'content-length']) {
+        if (r.headers.get(k)) hs.push(`${k}: ${r.headers.get(k)}`);
+      }
+      $('headers').textContent = hs.join('\n') || '(none shown)';
+      try { $('response').textContent = text ? JSON.stringify(JSON.parse(text), null, 2) : '(empty body)'; }
+      catch { $('response').textContent = text; }
+      loadList();
+    } catch (e) {
+      $('status').textContent = 'Request failed: ' + e.message;
+      $('status').className = 'status bad';
+    }
+  };
+
+  async function loadList() {
+    try {
+      const items = await (await fetch('/api/products')).json();
+      $('list').innerHTML = '';
+      if (!items.length) { $('list').innerHTML = '<tr><td colspan="5" class="small">No products yet.</td></tr>'; return; }
+      for (const p of items) {
+        const tr = document.createElement('tr');
+        for (const v of [p.id, p.name, p.productName, p.productDescription, '$' + Number(p.productPrice).toFixed(2)]) {
+          const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+        }
+        $('list').appendChild(tr);
+      }
+    } catch { $('list').innerHTML = '<tr><td colspan="5" class="small">Could not load products.</td></tr>'; }
+  }
+  $('refresh').onclick = loadList;
+  loadList();
+</script>
+</body>
+</html>
